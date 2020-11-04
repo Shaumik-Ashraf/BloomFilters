@@ -37,7 +37,7 @@ class AbstractBloomFilter(ABC):
     #param size: size of array
     #param array: initial array, either BitArray of 0s or List of 0s
     #param hash_names: list of strings for hashlib.new(), hash function must be supported
-    def __init__(self, size, array, hash_names = ['sha1', 'sha224', 'sha256']):
+    def __init__(self, size, array, hash_names = ['md5', 'sha1', 'sha224', 'sha256', 'sha384']):
         self.size = size;
         self.array = array;
         self.hash_names = hash_names;
@@ -82,6 +82,7 @@ class StandardBloomFilter(AbstractBloomFilter):
         super(StandardBloomFilter, self).__init__(size, BitArray(length=size));
     
     def add(self, string):
+        # print(f'adding {string}')
         for i in self.each_hashed_bucket_of(string):
             #print(i);
             self.array.set('1', i);
@@ -92,7 +93,9 @@ class StandardBloomFilter(AbstractBloomFilter):
         tmp = self.array.bin;
         for i in self.each_hashed_bucket_of(string):
             ret = (ret and (tmp[i] == '1'));
-        return(ret);
+        if not ret:
+            self.add(string)
+        return ret;
     
     def remove(self, string):
         raise Exception("Remove cannot be performed by Standard Bloom Filter");

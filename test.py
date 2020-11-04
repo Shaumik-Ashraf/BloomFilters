@@ -14,7 +14,6 @@ sbf = bloomfilter.StandardBloomFilter(10);
 print("BloomFilter: %s" % str(sbf));
 
 s = "apple";
-print("\nAdding %s ..." % s);
 #added.append(s);
 sbf.add(s);
 print("BloomFilter: %s" % str(sbf));
@@ -34,7 +33,6 @@ print( sbf.has(s) );
 print("BloomFilter: %s" % str(sbf));
 
 s = "banana";
-print("\nAdding %s ..." % s);
 sbf.add(s);
 print("BloomFilter: %s" % str(sbf));
 
