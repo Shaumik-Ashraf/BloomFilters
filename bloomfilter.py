@@ -3,14 +3,15 @@
 from abc import ABC, abstractmethod;      #abstract base class
 import hashlib;                  
 from bitstring import BitArray;  #requires pip install bitstring
+import numpy;
 
 class AbstractBloomFilter(ABC):
     "Abstract Bloom Filter Class" #documentation
 
     ## instance variables
-    #array;       #either BitArray or Linked List
-    #size;         #non-negative int
-    #hash_names; #list of strings
+    #array;       #BitArray or anything else for implementation
+    #size;        #non-negative int
+    #hash_names;  #list of strings
 
     ## abstract methods
     #add param to bloom filter
@@ -72,9 +73,28 @@ class AbstractBloomFilter(ABC):
         for index in self.each_hashed_bucket_of("hello"):
             self.array[index] = self.array[index] + 1;
         """
+        if( len(self.hash_names)==0 ):
+            raise Exception("No hashes in bloom filter");
+        
         for k in range(len(self.hash_names)):
             yield self.hash(k, string);
+    
+    #adds hash to set of hash functions done by bloom filter; resets bloom filter!
+    #param hash_name: (str) name of hash in hashlib
+    def add_hash(self, hash_name):
+        self.hash_names.append(hash_name);
+        self.reset();
+    
+    #clears all hash functions in bloom filter; resets bloom filter!
+    def clear_hashes(self):
+        self.hash_names.clear();
+        self.reset();
+    
+    #returns k (number of hash functions in bloom filter)
+    def num_hashes(self):
+        return len(self.hash_names);
         
+    
 
 class StandardBloomFilter(AbstractBloomFilter):
 
@@ -93,8 +113,8 @@ class StandardBloomFilter(AbstractBloomFilter):
         tmp = self.array.bin;
         for i in self.each_hashed_bucket_of(string):
             ret = (ret and (tmp[i] == '1'));
-        if not ret:
-            self.add(string)
+            if not ret:
+                break;
         return ret;
     
     def remove(self, string):
@@ -102,3 +122,31 @@ class StandardBloomFilter(AbstractBloomFilter):
 
     def reset(self):
         self.array.set(0);
+
+
+
+class CountingBloomFilter(AbstractBloomFilter):
+
+    def __init__(self, size):
+        super(CountingBloomFilter, self).__init__(size, numpy.zeros(size, dtype='int8'));
+    
+    def add(self, string):
+        for i in self.each_hashed_bucket_of(string):
+            self.array[i] += 1;
+        return;
+    
+    def has(self, string):
+        ret = True;
+        for i in self.each_hashed_bucket_of(string):
+            ret = (ret and (self.array[i] > 0));
+            if not ret:
+                break;
+        return ret;
+ 
+    def remove(self, string):
+        for i in self.each_hashed_bucket_of(string):
+            self.array[i] -= 1;
+        return;
+
+    def reset(self):
+        self.array[:] = 0;
