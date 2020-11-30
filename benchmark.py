@@ -8,7 +8,7 @@ with open('data.txt', 'r') as f:
         data.append(url.strip())
 L = len(data)
 
-k = 10000 # # of selected urls
+k = 100 # # of selected urls
 # random
 random_num = set()
 while len(random_num) < k:
@@ -35,7 +35,7 @@ class Benchmark():
             return True
 
 b = Benchmark()
-Nbits = 10000
+Nbits = 100000
 sbf = bloomfilter.StandardBloomFilter(Nbits)
 cnt_correct = 0
 total_time = 0.
@@ -47,4 +47,23 @@ for url in random_data:
     total_time += t_end - t_start
     if ben == bf:
         cnt_correct += 1
+
+print("Standard Bloom Filter results:");
+print(f'# dataset = {k}, {Nbits} bits, average time {1000 * total_time / k}ms, accuracy {cnt_correct / k}')
+
+b = Benchmark()
+Nbits = 100000
+cbf = bloomfilter.CountingBloomFilter(Nbits)
+cnt_correct = 0
+total_time = 0.
+for url in random_data:
+    ben = b.check(url)
+    t_start = time.time()
+    bf = cbf.has(url)
+    t_end = time.time()
+    total_time += t_end - t_start
+    if ben == bf:
+        cnt_correct += 1
+
+print("\nCounting Bloom Filter results:");
 print(f'# dataset = {k}, {Nbits} bits, average time {1000 * total_time / k}ms, accuracy {cnt_correct / k}')
