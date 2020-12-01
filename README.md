@@ -10,4 +10,4 @@ Comparisons and Analysis of Various Bloom Filters
  - Shaumik Ashraf
  - Emily Tao
 
-This project was completed in partial fulfillment of CS5785, Cornell Tech
+This project was completed in partial fulfillment of CS5112, Cornell Tech
