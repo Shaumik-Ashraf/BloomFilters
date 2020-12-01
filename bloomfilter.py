@@ -61,7 +61,10 @@ class AbstractBloomFilter(ABC):
         bytestring = string.encode();
         h = hashlib.new(self.hash_names[k]);
         h.update(bytestring);
-        digest = h.hexdigest();
+        if( self.hash_names[k][:5] == 'shake' ):
+            digest = h.hexdigest(16);
+        else:
+            digest = h.hexdigest();
         #print("Hash %s on %s gets %i" % (self.hash_names[k], string, int(digest, 16) % self.size))
         return( int(digest, 16) % self.size );
     
@@ -93,9 +96,13 @@ class AbstractBloomFilter(ABC):
     #returns k (number of hash functions in bloom filter)
     def num_hashes(self):
         return len(self.hash_names);
-        
     
-
+    """
+    #returns m (length of underlying array; returns -1 if variable)
+    def size(self):
+        return self.size;
+    """
+    
 class StandardBloomFilter(AbstractBloomFilter):
 
     def __init__(self, size):
