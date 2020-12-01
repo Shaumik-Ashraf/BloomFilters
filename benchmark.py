@@ -79,20 +79,25 @@ print(f'# dataset = {k}, {Nbits} bits, average time {1000 * total_time / k}ms, a
 def trial(data, abf, verbose = False):
     b = Benchmark()
     cnt_correct = 0
+    false_positive_cnt = 0;
     total_time = 0.
     for url in data:
         ben = b.check(url)
         t_start = time.time()
         bf = abf.has(url)
+        if( not bf ):
+            abf.add(url);
         t_end = time.time()
         total_time += t_end - t_start
         if ben == bf:
             cnt_correct += 1
+        if bf and (not ben):
+            false_positive_cnt += 1;
     
     n = len(data);
     k = abf.num_hashes();
     m = abf.size;
-    false_positive_rate = 1.0 - cnt_correct / len(data);
+    false_positive_rate = false_positive_cnt / len(data);
     average_time = 1000 * total_time / len(data); #ms
     
     if( verbose ):

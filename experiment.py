@@ -9,8 +9,9 @@ import numpy;
 import pandas;
 import matplotlib.pyplot as plt;
 
-m_values = [1, 100, 1000, 10000, ]#25000, 50000, 100000];
-k_values = [3, 4, 5, 6, 7, 8, 9, 10];
+m_values = [1, 100, 1000, 10000, 20000, 30000];
+k_values = [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14];
+dataset_size = 10000;
 
 hash_store = list(hashlib.algorithms_available);
 """ hash_store on my computer:
@@ -73,52 +74,63 @@ def x_trials(x, data, abf):
     
     return(numpy.average(fprs), numpy.average(timings));
 
-data = benchmark.load_data();
-fpr_results = numpy.zeros((len(m_values), len(k_values)));
-time_results = numpy.zeros((len(m_values), len(k_values)));
-                                
-for i in range(len(m_values)):
-    for j in range(len(k_values)):
-        m = m_values[i];
-        k = k_values[j];
-        
-        print("m=%i, k=%i" % (m, k));
-        
-        #construct bloom filter
-        sbf = bloomfilter.StandardBloomFilter(m);
-        hash_names = get_random_hashes(k);
-        sbf.clear_hashes();
-        for hash_name in hash_names:
-            sbf.add_hash(hash_name);
-        
-        #run trials
-        avg_fpr, avg_time = x_trials(3, data, sbf);
-        fpr_results[i][j] = avg_fpr;
-        time_results[i][j] = avg_time;
+def run(bloomfilter_name = 'Standard Bloom Filter'):
+    data = benchmark.load_data(dataset_size);
+    
+    fpr_results = numpy.zeros((len(m_values), len(k_values)));
+    time_results = numpy.zeros((len(m_values), len(k_values)));
+                                    
+    for i in range(len(m_values)):
+        for j in range(len(k_values)):
+            m = m_values[i];
+            k = k_values[j];
+            
+            print("m=%i, k=%i" % (m, k));
+            
+            #construct bloom filter
+            if( bloomfilter_name == 'Standard Bloom Filter' ):
+                bf = bloomfilter.StandardBloomFilter(m);
+            elif( bloomfilter_name == 'Counting Bloom Filter' ):
+                bf = bloomfilter.CountingBloomFilter(m);
+            else:
+                raise Exception("%s not implemented" % bloomfilter_name);
+            
+            hash_names = get_random_hashes(k);
+            bf.clear_hashes(); #clear default hashes
+            for hash_name in hash_names:
+                bf.add_hash(hash_name);
+            
+            #run trials
+            avg_fpr, avg_time = x_trials(3, data, bf);
+            fpr_results[i][j] = avg_fpr;
+            time_results[i][j] = avg_time;
+    
+    print(fpr_results);
+    print(time_results);
+    
+    fpr_df = pandas.DataFrame(data = fpr_results, index = m_values, columns = k_values);
+    time_df = pandas.DataFrame(data = time_results, index = m_values, columns = k_values);
+    
+    fpr_df.to_csv("%s-fpr_results-%i.csv" % (bloomfilter_name, dataset_size));
+    time_df.to_csv("%s-time_results-%i.csv" % (bloomfilter_name, dataset_size));
+    
+    plt.figure();
+    plt.xlabel('k (number of hash functions)');
+    plt.ylabel('m (bloom filter size)');
+    plt.title("%s Run Times" % bloomfilter_name); 
+    plt.xticks(range(len(k_values)), k_values);
+    plt.yticks(range(len(m_values)), m_values);
+    hm = plt.imshow(time_results, cmap="Blues", interpolation="nearest");
+    plt.colorbar(hm);
+    
+    plt.figure();
+    plt.xlabel('k (number of hash functions)');
+    plt.ylabel('m (bloom filter size)');
+    plt.title("%s False Positive Rates" % bloomfilter_name);
+    plt.xticks(range(len(k_values)), k_values);
+    plt.yticks(range(len(m_values)), m_values);
+    hm = plt.imshow(fpr_results, cmap="Blues", interpolation="nearest");
+    plt.colorbar(hm);
 
-print(fpr_results);
-print(time_results);
-
-fpr_df = pandas.DataFrame(data = fpr_results, index = m_values, columns = k_values);
-time_df = pandas.DataFrame(data = time_results, index = m_values, columns = k_values);
-
-fpr_df.to_csv("fpr_results.csv");
-time_df.to_csv("time_results.csv");
-
-plt.figure();
-plt.xlabel('k');
-plt.ylabel('m');
-plt.title("Standard Bloom Filter Run Times");
-plt.xticks(range(len(k_values)), k_values);
-plt.yticks(range(len(m_values)), m_values);
-hm = plt.imshow(time_results, cmap="Blues", interpolation="nearest");
-plt.colorbar(hm);
-
-plt.figure();
-plt.xlabel('k');
-plt.ylabel('m');
-plt.title("Standard Bloom Filter False Positive Rates");
-plt.xticks(range(len(k_values)), k_values);
-plt.yticks(range(len(m_values)), m_values);
-hm = plt.imshow(fpr_results, cmap="Blues", interpolation="nearest");
-plt.colorbar(hm);
+run("Standard Bloom Filter");
+run("Counting Bloom Filter");
