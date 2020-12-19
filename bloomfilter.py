@@ -157,3 +157,39 @@ class CountingBloomFilter(AbstractBloomFilter):
 
     def reset(self):
         self.array[:] = 0;
+
+class ScalingBloomFilter(AbstractBloomFilter):
+    # https://gsd.di.uminho.pt/members/cbm/ps/dbloom.pdf
+    
+    def __init__(self, error_rate):
+        pass;
+    
+    def add(self, string):
+        pass;
+        
+    def has(self, string):
+        pass;
+        
+    def remove(self, string):
+        pass;
+    
+    def reset(self):
+        pass;
+
+class SpectralBloomFilter(AbstractBloomFilter):
+    # https://whiteblock.io/wp-content/uploads/2019/10/sbf-sigmod-03.pdf
+    
+    def __init__(self, error_rate):
+        pass;
+    
+    def add(self, string):
+        pass;
+        
+    def has(self, string):
+        pass;
+        
+    def remove(self, string):
+        pass;
+    
+    def reset(self):
+        pass;
