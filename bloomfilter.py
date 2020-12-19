@@ -40,7 +40,7 @@ class AbstractBloomFilter(ABC):
     #param size: size of array
     #param array: initial array, either BitArray of 0s or List of 0s
     #param hash_names: list of strings for hashlib.new(), hash function must be supported
-    def __init__(self, hash_names = ['md5', 'sha1', 'sha224', 'sha256', 'sha384']):
+    def __init__(self, hash_names = []):
         self.hash_names = hash_names;
         self.load = None;
         for s in self.hash_names:
@@ -282,9 +282,11 @@ class ScalableBloomFilter(AbstractBloomFilter):
     # https://gsd.di.uminho.pt/members/cbm/ps/dbloom.pdf
     
     def __init__(self, initial_size, s=2):
+        AbstractBloomFilter.__init__(self)
         self.bf = [StandardBloomFilter(initial_size)]
         self.num_bf = 1
         self.cur_bf = 0
+        self.size = initial_size
         # self.error_prob = error_prob # P
         self.p = 0.5 # fill ratio
         self.s = s # filter size growth. sqrt(2), 2, 4
@@ -299,6 +301,7 @@ class ScalableBloomFilter(AbstractBloomFilter):
         self.bf[self.cur_bf].add(string)
         if self.bf[self.cur_bf].fill_ratio >= self.p:
             size = self.bf[self.cur_bf].size * self.s
+            self.size += size
             self.bf.append(StandardBloomFilter(size))
             self.num_bf += 1
             self.cur_bf += 1

@@ -66,14 +66,14 @@ def trial(data, bf, verbose = False):
     for url in data:
         ben = b.check(url)
         t_start = time.time()
-        bf = bf.has(url)
-        if( not bf ):
+        blf = bf.has(url)
+        if( not blf ):
             bf.add(url)
         t_end = time.time()
         total_time += t_end - t_start
-        if ben == bf:
+        if ben == blf:
             cnt_correct += 1
-        if bf and (not ben):
+        if blf and (not ben):
             false_positive_cnt += 1
     
     n = len(data)

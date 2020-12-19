@@ -9,7 +9,7 @@ import numpy;
 import pandas;
 import matplotlib.pyplot as plt;
 
-m_values = [1, 100, 1000, 10000, 20000, 30000];
+m_values = [1, 10, 100, 1000, 10000, 20000, 30000];
 k_values = [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14];
 dataset_size = 10000;
 
@@ -57,18 +57,18 @@ def get_random_hashes(k):
         
         return(ret);
 
-#runs x trials and averages the false positive rates and runtimes
-#param x - int, number of trials to run
+#runs t trials and averages the false positive rates and runtimes
+#param t - int, number of trials to run
 #param data - dataset of urls
-#param abf - instance of abstract bloom filter
+#param bf - instance of bloom filter
 #returns average_false_positive_rate, average_time
-def x_trials(x, data, abf):
-    fprs = numpy.zeros(x);
-    timings = numpy.zeros(x);
+def t_trials(t, data, bf):
+    fprs = numpy.zeros(t);
+    timings = numpy.zeros(t);
     
-    for i in range(x):
-        abf.reset();
-        fpr, timing = benchmark.trial(data, abf);
+    for i in range(t):
+        bf.reset();
+        fpr, timing = benchmark.trial(data, bf);
         fprs[i] = fpr;
         timings[i] = timing;
     
@@ -92,6 +92,8 @@ def run(bloomfilter_name = 'Standard Bloom Filter'):
                 bf = bloomfilter.StandardBloomFilter(m);
             elif( bloomfilter_name == 'Counting Bloom Filter' ):
                 bf = bloomfilter.CountingBloomFilter(m);
+            elif bloomfilter_name == 'Scalable Bloom Filter':
+                bf = bloomfilter.ScalableBloomFilter(m)
             else:
                 raise Exception("%s not implemented" % bloomfilter_name);
             
@@ -101,7 +103,7 @@ def run(bloomfilter_name = 'Standard Bloom Filter'):
                 bf.add_hash(hash_name);
             
             #run trials
-            avg_fpr, avg_time = x_trials(3, data, bf);
+            avg_fpr, avg_time = t_trials(3, data, bf);
             fpr_results[i][j] = avg_fpr;
             time_results[i][j] = avg_time;
     
@@ -111,8 +113,8 @@ def run(bloomfilter_name = 'Standard Bloom Filter'):
     fpr_df = pandas.DataFrame(data = fpr_results, index = m_values, columns = k_values);
     time_df = pandas.DataFrame(data = time_results, index = m_values, columns = k_values);
     
-    fpr_df.to_csv("%s-fpr_results-%i.csv" % (bloomfilter_name, dataset_size));
-    time_df.to_csv("%s-time_results-%i.csv" % (bloomfilter_name, dataset_size));
+    fpr_df.to_csv("for_heatmap/%s-fpr_results-%i.csv" % (bloomfilter_name, dataset_size));
+    time_df.to_csv("for_heatmap/%s-time_results-%i.csv" % (bloomfilter_name, dataset_size));
     
     plt.figure();
     plt.xlabel('k (number of hash functions)');
@@ -132,5 +134,6 @@ def run(bloomfilter_name = 'Standard Bloom Filter'):
     hm = plt.imshow(fpr_results, cmap="Blues", interpolation="nearest");
     plt.colorbar(hm);
 
-run("Standard Bloom Filter");
-run("Counting Bloom Filter");
+#run("Standard Bloom Filter");
+#run("Counting Bloom Filter");
+run("Scalable Bloom Filter")
