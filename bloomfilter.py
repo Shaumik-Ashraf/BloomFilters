@@ -4,6 +4,8 @@ from abc import ABC, abstractmethod;      #abstract base class
 import hashlib;                  
 from bitstring import BitArray;  #requires pip install bitstring
 import numpy;
+import threading;
+import time;
 
 class AbstractBloomFilter(ABC):
     "Abstract Bloom Filter Class" #documentation
@@ -68,13 +70,13 @@ class AbstractBloomFilter(ABC):
         #print("Hash %s on %s gets %i" % (self.hash_names[k], string, int(digest, 16) % self.size))
         return( int(digest, 16) % self.size );
     
-    #iterates along each bucket returned by each hash in bloom filter
+    #iterates along each int (bucket) returned by each hash in bloom filter
     #param string: python string, must be convertable to 8 bit encoding
-    def each_hashed_bucket_of(self, string):
+    def each_hash_of(self, string):
         """
-        #i.e. adding 1 to each bucket for "hello"
-        for index in self.each_hashed_bucket_of("hello"):
-            self.array[index] = self.array[index] + 1;
+        #example:
+        for index_from_hash in self.each_hash_of("hello"):
+            bitarray[index_from_hash] = 1;
         """
         if( len(self.hash_names)==0 ):
             raise Exception("No hashes in bloom filter");
@@ -110,7 +112,7 @@ class StandardBloomFilter(AbstractBloomFilter):
     
     def add(self, string):
         # print(f'adding {string}')
-        for i in self.each_hashed_bucket_of(string):
+        for i in self.each_hash_of(string):
             #print(i);
             self.array.set('1', i);
         return;
@@ -118,7 +120,7 @@ class StandardBloomFilter(AbstractBloomFilter):
     def has(self, string):
         ret = True;
         tmp = self.array.bin;
-        for i in self.each_hashed_bucket_of(string):
+        for i in self.each_hash_of(string):
             ret = (ret and (tmp[i] == '1'));
             if not ret:
                 break;
@@ -138,25 +140,136 @@ class CountingBloomFilter(AbstractBloomFilter):
         super(CountingBloomFilter, self).__init__(size, numpy.zeros(size, dtype='int8'));
     
     def add(self, string):
-        for i in self.each_hashed_bucket_of(string):
+        for i in self.each_hash_of(string):
             self.array[i] += 1;
         return;
     
     def has(self, string):
         ret = True;
-        for i in self.each_hashed_bucket_of(string):
+        for i in self.each_hash_of(string):
             ret = (ret and (self.array[i] > 0));
             if not ret:
                 break;
         return ret;
  
     def remove(self, string):
-        for i in self.each_hashed_bucket_of(string):
+        for i in self.each_hash_of(string):
             self.array[i] -= 1;
         return;
 
     def reset(self):
         self.array[:] = 0;
+
+
+
+class ParallelPartitionedBloomFilter(AbstractBloomFilter):
+    #Like Standard Bloom Filter, but multiple bitarrays
+    #are stored, one for each hash function. This allows
+    #for multi-threaded inquiries.
+    
+    def __init__(self, size):
+        super(ParallelPartitionedBloomFilter, self).__init__(size, list());
+        self.flag = True; #shared memory; threads set to false if str not found
+        self.flag_lock = threading.Lock();
+        self.threads = list();
+
+        for i, s in enumerate(self.hash_names):
+            self.array.append(BitArray(length=size));
+            #self.array is a list of bitarrays, one bitarray per hash function
+
+    def reset_flag(self):
+        while( self.flag_lock.locked() ):
+            time.sleep(0.05);
+        self.flag_lock.acquire();
+        self.flag = True;
+        self.flag_lock.release();
+    
+    def set_flag_false(self):
+        while( self.flag_lock.locked() ):
+            time.sleep(0.05);
+        self.flag_lock.acquire();
+        self.flag = False;
+        self.flag_lock.release();
+    
+    #read only shouldn't have to be locked/mutex'd...
+    #but I will lock it anyways
+    def get_flag(self):
+        while( self.flag_lock.locked() ):
+            time.sleep(0.05);
+            
+        self.flag_lock.acquire();
+        ret = self.flag;
+        self.flag_lock.release();
+        
+        return(ret);
+
+    def threaded_add(self, i, string):
+        print("threaded add called!");
+        self.array[i].set('1', self.hash(i,string));
+        #for j = hash_i(string), use the bitarray at array[i], and set bitarray[j],
+    
+    def threaded_has(self, i, string):
+        ki = self.hash(i, string);
+        if( self.array[i][ki] == '0' ): #bit not set, set flag to false
+            self.set_flag_false();
+        #else bit set, flag is true by default
+        
+    def add(self, string):
+        print("1");
+        for i in range(self.num_hashes()):
+            print("2 - %i" % i);
+            th = threading.Thread(target=self.threaded_add, args=(self, i, string));
+            th.start();
+            self.threads.append(th);
+        
+        print("3");
+        
+        for th in self.threads:
+            print("4 - %s" % str(th));
+            th.join();
+        
+        print("5");
+        
+        self.threads.clear();
+        print("6");
+        
+    def has(self, string):
+        print("7");
+        self.reset_flag();
+        print("8");
+        for i, h in enumerate(self.hash_names):
+            th = threading.Thread(target=self.threaded_has, args=(self, i, string));
+            th.start();
+            self.threads.append(th);
+            print("9 - %i" % i);
+            
+        print("10");
+        for th in self.threads:
+            print("11 - ", str(th));
+            th.join();
+            
+        print("12");
+        self.threads.clear();
+        print("13");
+        return( self.get_flag() );
+        
+    def remove(self, string):
+        raise Exception("Remove cannot be performed by Parallel Partitioned Bloom Filter");
+    
+    def reset(self):
+        for bitarr in self.array:
+            bitarr.set(0);
+
+    #override
+    def add_hash(self, hash_name):
+        self.hash_names.append(hash_name);
+        self.array.append(BitArray(length=self.size));
+        self.reset();
+    
+    #override
+    def clear_hashes(self):
+        self.hash_names.clear();
+        self.array.clear();
 
 class ScalingBloomFilter(AbstractBloomFilter):
     # https://gsd.di.uminho.pt/members/cbm/ps/dbloom.pdf
@@ -175,6 +288,8 @@ class ScalingBloomFilter(AbstractBloomFilter):
     
     def reset(self):
         pass;
+
+
 
 class SpectralBloomFilter(AbstractBloomFilter):
     # https://whiteblock.io/wp-content/uploads/2019/10/sbf-sigmod-03.pdf

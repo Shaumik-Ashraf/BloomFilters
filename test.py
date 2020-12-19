@@ -158,3 +158,87 @@ print("BloomFilter: %s" % str(cbf));
 assert not e, "Test Failed! Empty BF returned positive.";
 
 print("\n============= Test Success! =====================");
+
+print("=========== Testing Parallel Partitioned Bloom Filter =========");
+
+ppbf = bloomfilter.ParallelPartitionedBloomFilter(7);
+
+print("BloomFilter: %s" % str(ppbf));
+print("Number of hash functions: %i" % ppbf.num_hashes());
+assert type(ppbf.num_hashes()) == int, "Test failed! Number of hashes not int."
+assert ppbf.num_hashes() != 0, "Test failed! No hashes found."
+
+print("\nClearing all hash functions...");
+ppbf.clear_hashes();
+print("Number of hash functions: %i" % ppbf.num_hashes());
+assert ppbf.num_hashes() == 0, "Test failed! Hashes found.";
+
+print("\nAdding hash functions sha1, sha224, & sha384...");
+ppbf.add_hash('sha1');
+ppbf.add_hash('sha224');
+ppbf.add_hash('sha384');
+print("Number of hash functions: %i" % ppbf.num_hashes());
+assert ppbf.num_hashes() == 3, "Test failed! Unexpected number of hashes found.";
+
+s = "apple";
+print("\nAdding %s to bloomfilter..." % s);
+ppbf.add(s);
+print("BloomFilter: %s" % str(ppbf));
+
+print("\nChecking %s in BF..." % s);
+e = ppbf.has(s);
+print("BloomFilter: %s" % str(ppbf));
+assert e, "Test failed! False Negative.";
+
+s = "banana";
+print("\nChecking %s in BF..." % s);
+e1 = ppbf.has(s);
+print("BloomFilter: %s" % str(ppbf));
+if( e1 ):
+    print('False positive!');
+    
+s = "tower";
+print("\nChecking %s in BF..." % s);
+e2 = ppbf.has(s);
+print("BloomFilter: %s" % str(ppbf));
+if( e2 ):
+    print('False positive!');
+assert (not e1) and (not e2), "You got 2/2 false positives, which is suspicious but not impossible."
+
+s = "banana";
+print("\nAdding %s to bloomfilter..." % s);
+ppbf.add(s);
+print("BloomFilter: %s" % str(ppbf));
+
+print("\nChecking %s in BF..." % s);
+e = ppbf.has(s);
+print("BloomFilter: %s" % str(ppbf));
+assert e, "Test failed! False Negative.";
+
+s = "tower";
+print("\nChecking %s in BF..." % s);
+e = ppbf.has(s);
+print("BloomFilter: %s" % str(ppbf));
+if( e ):
+    print('False positive!');
+
+print("\nTrying remove, should raise exception for PPBF");
+try:
+    ppbf.remove(s);
+    assert False, "Test Failed! Standard BF returned after removing element."
+except:
+    print("Exception raised successfully");
+finally:
+    print("Exception should have been raised.");
+
+print("\nReseting BF");
+ppbf.reset();
+print("BloomFilter: %s" % str(ppbf));
+
+a = "apple";
+print("\nChecking %s in BF..." % s);
+e = ppbf.has(s);
+print("BloomFilter: %s" % str(ppbf));
+assert not e, "Test Failed! Empty BF returned positive.";
+
+print("\n============= Test Success! =====================");
