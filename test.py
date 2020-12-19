@@ -43,7 +43,7 @@ def test(bf):
     print(f'BloomFilter: {bf}')
     print(f'Checking {s1} in bloomfilter ...')
     e = bf.has(s1)
-    assert e, 'Test failed! Empty bloomfilter returns positive.'
+    assert not e, 'Test failed! Empty bloomfilter returns positive.'
 
 
 #test(bloomfilter.StandardBloomFilter(10))

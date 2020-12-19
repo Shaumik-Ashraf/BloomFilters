@@ -40,7 +40,7 @@ class AbstractBloomFilter(ABC):
     #param size: size of array
     #param array: initial array, either BitArray of 0s or List of 0s
     #param hash_names: list of strings for hashlib.new(), hash function must be supported
-    def __init__(self, hash_names = []):
+    def __init__(self, hash_names = ['md5', 'sha1', 'sha224', 'sha256', 'sha384']):
         self.hash_names = hash_names;
         self.load = None;
         for s in self.hash_names:
