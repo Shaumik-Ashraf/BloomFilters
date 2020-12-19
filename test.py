@@ -2,6 +2,53 @@
 
 import bloomfilter;
 
+def test(bf):
+    print(f'BloomFilter: {bf}')
+
+    s1 = 'apple'
+    print(f'Adding {s1} to bloomfilter ...')
+    bf.add(s1)
+    print(f'BloomFilter: {bf}')
+    print(f'Checking {s1} in bloomfilter ...')
+    e = bf.has(s1)
+    assert e, 'Test failed! False negative.'
+
+    s2 = 'banana'
+    print(f'Checking {s2} in bloomfilter ...')
+    e1 = bf.has(s2)
+    if e1:
+        print('False positive!')
+    
+    s3 = 'carrot'
+    print(f'Checking {s3} in bloomfilter ...')
+    e2 = bf.has(s3)
+    if e2:
+        print('False positive!')
+    assert (not e1) and (not e2), 'You got 2/2 false positives, which is suspicious but not impossible.'
+
+    print(f'Adding {s2} to bloomfilter ...')
+    bf.add(s2)
+    print(f'BloomFilter: {bf}')
+    print(f'Checking {s2} in bloomfilter ...')
+    e = bf.has(s2)
+    assert e, 'Test failed! False negative.'
+
+    print(f'Checking {s3} in bloomfilter ...')
+    e = bf.has(s3)
+    if e:
+        print('False positive!')
+    
+    print('Reseting bloomfilter')
+    bf.reset()
+    print(f'BloomFilter: {bf}')
+    print(f'Checking {s1} in bloomfilter ...')
+    e = bf.has(s1)
+    assert e, 'Test failed! Empty bloomfilter returns positive.'
+
+
+#test(bloomfilter.StandardBloomFilter(10))
+test(bloomfilter.ScalableBloomFilter(10))
+'''
 print("=========== Testing Standard Bloom Filter =========");
 
 sbf = bloomfilter.StandardBloomFilter(10);
@@ -242,3 +289,4 @@ print("BloomFilter: %s" % str(ppbf));
 assert not e, "Test Failed! Empty BF returned positive.";
 
 print("\n============= Test Success! =====================");
+'''

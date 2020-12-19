@@ -26,7 +26,7 @@ class AbstractBloomFilter(ABC):
     def has(string):
         pass
     
-    #remove string from bloom filter; not possible for all types of bloom filters
+    #remove string from bloom filter; only for counting bloom filters
     @abstractmethod
     def remove(string):
         pass
@@ -40,23 +40,14 @@ class AbstractBloomFilter(ABC):
     #param size: size of array
     #param array: initial array, either BitArray of 0s or List of 0s
     #param hash_names: list of strings for hashlib.new(), hash function must be supported
-    def __init__(self, size, array, hash_names = ['md5', 'sha1', 'sha224', 'sha256', 'sha384']):
-        self.size = size;
-        self.array = array;
+    def __init__(self, hash_names = ['md5', 'sha1', 'sha224', 'sha256', 'sha384']):
         self.hash_names = hash_names;
         self.load = None;
         for s in self.hash_names:
             if( s not in hashlib.algorithms_available ):
                 raise Exception("Hash " + s + " not found");
     
-    #returns: string representing bloom filter; allows you to do: print( my_bloom_filter );
-    def __str__(self):
-        if isinstance(self, BitArray):
-            return self.array.bin;
-        else:
-            return str( self.array );
-    
-    #param k: int corresponding to hash function; k=0 is first hash in hash_names
+    #param k: int corresponding index of hash function; k=0 is first hash in hash_names
     #param string: python string, must be convertable to 8 bit encoding
     #returns: non-negative int within bloomfilter size
     def hash(self, k, string):
@@ -108,14 +99,22 @@ class AbstractBloomFilter(ABC):
 class StandardBloomFilter(AbstractBloomFilter):
 
     def __init__(self, size):
-        super(StandardBloomFilter, self).__init__(size, BitArray(length=size));
+        super(StandardBloomFilter, self).__init__()
+        self.size = size
+        self.array = BitArray(length=size)
+        self.fill_ratio = 0.
+    
+    #returns: string representing bloom filter; allows you to do: print( my_bloom_filter );
+    def __str__(self):
+        return self.array.bin
     
     def add(self, string):
         # print(f'adding {string}')
         for i in self.each_hash_of(string):
             #print(i);
-            self.array.set('1', i);
-        return;
+            self.array.set('1', i)
+        self.fill_ratio = self.array.count(True) / self.size
+        return
     
     def has(self, string):
         ret = True;
@@ -127,17 +126,23 @@ class StandardBloomFilter(AbstractBloomFilter):
         return ret;
     
     def remove(self, string):
-        raise Exception("Remove cannot be performed by Standard Bloom Filter");
+        raise Exception("No remove operation in Standard Bloom Filter");
 
     def reset(self):
-        self.array.set(0);
-
+        self.array.set(0)
+        self.fill_ratio = 0.
 
 
 class CountingBloomFilter(AbstractBloomFilter):
 
     def __init__(self, size):
-        super(CountingBloomFilter, self).__init__(size, numpy.zeros(size, dtype='int8'));
+        super(CountingBloomFilter, self).__init__()
+        self.size = size
+        self.array = numpy.zeros(size, dtype='int8')
+    
+    #returns: string representing bloom filter; allows you to do: print( my_bloom_filter );
+    def __str__(self):
+        return str(self.array)
     
     def add(self, string):
         for i in self.each_hash_of(string):
@@ -161,14 +166,15 @@ class CountingBloomFilter(AbstractBloomFilter):
         self.array[:] = 0;
 
 
-
 class ParallelPartitionedBloomFilter(AbstractBloomFilter):
     #Like Standard Bloom Filter, but multiple bitarrays
     #are stored, one for each hash function. This allows
     #for multi-threaded inquiries.
     
     def __init__(self, size):
-        super(ParallelPartitionedBloomFilter, self).__init__(size, list());
+        super(ParallelPartitionedBloomFilter, self).__init__()
+        self.size = size
+        self.array = list()
         self.flag = True; #shared memory; threads set to false if str not found
         self.flag_lock = threading.Lock();
         self.threads = list();
@@ -271,24 +277,47 @@ class ParallelPartitionedBloomFilter(AbstractBloomFilter):
         self.hash_names.clear();
         self.array.clear();
 
-class ScalingBloomFilter(AbstractBloomFilter):
+
+class ScalableBloomFilter(AbstractBloomFilter):
     # https://gsd.di.uminho.pt/members/cbm/ps/dbloom.pdf
     
-    def __init__(self, error_rate):
-        pass;
+    def __init__(self, initial_size, s=2):
+        self.bf = [StandardBloomFilter(initial_size)]
+        self.num_bf = 1
+        self.cur_bf = 0
+        # self.error_prob = error_prob # P
+        self.p = 0.5 # fill ratio
+        self.s = s # filter size growth. sqrt(2), 2, 4
+    
+    def __str__(self):
+        output = ''
+        for bf in self.bf:
+            output += '\n' + str(bf)
+        return output
     
     def add(self, string):
-        pass;
+        self.bf[self.cur_bf].add(string)
+        if self.bf[self.cur_bf].fill_ratio >= self.p:
+            size = self.bf[self.cur_bf].size * self.s
+            self.bf.append(StandardBloomFilter(size))
+            self.num_bf += 1
+            self.cur_bf += 1
         
     def has(self, string):
-        pass;
+        for i in range(self.num_bf):
+            if self.bf[i].has(string):
+                return True
+        return False
         
     def remove(self, string):
-        pass;
+        raise Exception('No remove operation in Scalable Bloom Filter')
     
     def reset(self):
-        pass;
-
+        for i in range(1, self.num_bf):
+            del self.bf[-1]
+        self.bf[0].reset()
+        self.num_bf = 1
+        self.cur_bf = 0
 
 
 class SpectralBloomFilter(AbstractBloomFilter):
