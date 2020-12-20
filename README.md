@@ -4,7 +4,7 @@ Comparisons and Analysis of Various Bloom Filters
 
 ## Results Highlight
 
-![Image failed to render; see figure/ScBF-FPR-10000.png](https://github.com/Shaumik-Ashraf/BloomFilters/blob/main/fiugre/ScBF-FPR-10000.png?raw=true)
+![Image failed to render; see figure/ScBF-FPR-10000.png](https://github.com/Shaumik-Ashraf/BloomFilters/blob/main/figure/ScBF-FPR-10000.png?raw=true)
 
 ![Image failed to render; see figure/PPBF-runtime-10000-k10.png](https://github.com/Shaumik-Ashraf/BloomFilters/blob/main/figure/PPBF-runtime-10000-k10.png?raw=true)
 
