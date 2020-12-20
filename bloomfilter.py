@@ -183,7 +183,7 @@ class ParallelPartitionedBloomFilter(AbstractBloomFilter):
             self.array.append(BitArray(length=size));
             #self.array is a list of bitarrays, one bitarray per hash function
 
-    def reset_flag(self):
+    def set_flag_true(self):
         while( self.flag_lock.locked() ):
             time.sleep(0.05);
         self.flag_lock.acquire();
@@ -210,54 +210,57 @@ class ParallelPartitionedBloomFilter(AbstractBloomFilter):
         return(ret);
 
     def threaded_add(self, i, string):
-        print("threaded add called!");
-        self.array[i].set('1', self.hash(i,string));
+        ki = self.hash(i, string);
+        #print("th add", ki)
+        self.array[i].set('1', ki);
         #for j = hash_i(string), use the bitarray at array[i], and set bitarray[j],
     
     def threaded_has(self, i, string):
         ki = self.hash(i, string);
-        if( self.array[i][ki] == '0' ): #bit not set, set flag to false
+        #print("th has", ki);
+        if( self.array[i][ki] == False ): #bit not set, set flag to false
             self.set_flag_false();
         #else bit set, flag is true by default
         
     def add(self, string):
-        print("1");
+        #print("1", self.array);
         for i in range(self.num_hashes()):
-            print("2 - %i" % i);
-            th = threading.Thread(target=self.threaded_add, args=(self, i, string));
-            th.start();
+            #print("2 - %i" % i);
+            th = threading.Thread(target=self.threaded_add, args=(i, string));
             self.threads.append(th);
+            th.start();
         
-        print("3");
+        #print("3");
         
         for th in self.threads:
-            print("4 - %s" % str(th));
+            #print("4 - %s" % str(th));
             th.join();
         
-        print("5");
+        #print("5");
         
         self.threads.clear();
-        print("6");
+        #print("6", self.array);
         
     def has(self, string):
-        print("7");
-        self.reset_flag();
-        print("8");
+        #print("7");
+        self.set_flag_true();
+        #print("8");
         for i, h in enumerate(self.hash_names):
-            th = threading.Thread(target=self.threaded_has, args=(self, i, string));
+            th = threading.Thread(target=self.threaded_has, args=(i, string));
             th.start();
             self.threads.append(th);
-            print("9 - %i" % i);
+            #print("9 - %i" % i);
             
-        print("10");
+        #print("10");
         for th in self.threads:
-            print("11 - ", str(th));
+            #print("11 - ", str(th));
             th.join();
             
-        print("12");
+        #print("12");
         self.threads.clear();
-        print("13");
-        return( self.get_flag() );
+        #print("13");
+        flag = self.get_flag();
+        return( flag );
         
     def remove(self, string):
         raise Exception("Remove cannot be performed by Parallel Partitioned Bloom Filter");
@@ -322,21 +325,3 @@ class ScalableBloomFilter(AbstractBloomFilter):
         self.num_bf = 1
         self.cur_bf = 0
 
-
-class SpectralBloomFilter(AbstractBloomFilter):
-    # https://whiteblock.io/wp-content/uploads/2019/10/sbf-sigmod-03.pdf
-    
-    def __init__(self, error_rate):
-        pass;
-    
-    def add(self, string):
-        pass;
-        
-    def has(self, string):
-        pass;
-        
-    def remove(self, string):
-        pass;
-    
-    def reset(self):
-        pass;

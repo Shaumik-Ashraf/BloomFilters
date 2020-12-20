@@ -44,11 +44,21 @@ def test(bf):
     print(f'Checking {s1} in bloomfilter ...')
     e = bf.has(s1)
     assert not e, 'Test failed! Empty bloomfilter returns positive.'
+    print("Test Success!")
 
+# Success
+#test(bloomfilter.StandardBloomFilter(10));
 
-#test(bloomfilter.StandardBloomFilter(10))
-test(bloomfilter.ScalableBloomFilter(10))
-'''
+# Success
+#test(bloomfilter.CountingBloomFilter(10));
+
+# Success
+#test(bloomfilter.ScalableBloomFilter(10));
+
+# Success
+test(bloomfilter.ParallelPartitionedBloomFilter(10));
+
+''' OLD CODE:
 print("=========== Testing Standard Bloom Filter =========");
 
 sbf = bloomfilter.StandardBloomFilter(10);
@@ -289,4 +299,4 @@ print("BloomFilter: %s" % str(ppbf));
 assert not e, "Test Failed! Empty BF returned positive.";
 
 print("\n============= Test Success! =====================");
-'''
+#'''
