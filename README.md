@@ -4,9 +4,9 @@ Comparisons and Analysis of Various Bloom Filters
 
 ## Results Highlight
 
-![Image failed to render; see figure/ScBF-FPR-10000.png](https://Github.com/Shaumik-Ashraf/BloomFilters/blob/master/fiugre/ScBF-FPR-10000.png?raw=true)
+![Image failed to render; see figure/ScBF-FPR-10000.png](https://github.com/Shaumik-Ashraf/BloomFilters/blob/master/fiugre/ScBF-FPR-10000.png?raw=true)
 
-![Image failed to render; see figure/PPBF-runtime-10000-k10.png](https://Github.com/Shaumik-Ashraf/BloomFilters/blob/master/figure/PPBF-runtime-10000-k10.png?raw=true)
+![Image failed to render; see figure/PPBF-runtime-10000-k10.png](https://github.com/Shaumik-Ashraf/BloomFilters/blob/master/figure/PPBF-runtime-10000-k10.png?raw=true)
 
 ## File Spec
  - bloomfilter.py -> modular implementation of various Bloom Filter classes
