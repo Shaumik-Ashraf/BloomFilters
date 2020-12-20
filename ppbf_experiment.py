@@ -1,5 +1,6 @@
-# experiment.py
-# get false positive rate and runtime data for bloomfilters
+# ppbf_experiment.py
+# test ppbf only with smaller k values
+# otherwise this file is a copy-pase of experiment.py
 
 import bloomfilter;
 import benchmark;
@@ -10,7 +11,7 @@ import pandas;
 import matplotlib.pyplot as plt;
 
 m_values = [1, 10, 100, 1000, 10000, 20000, 30000];
-k_values = [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14];
+k_values = [3, 4, 5, 6, 7, 8, 9, 10,] #11, 12, 13, 14];
 dataset_size = 10000;
 
 hash_store = list(hashlib.algorithms_available);
@@ -136,7 +137,5 @@ def run(bloomfilter_name = 'Standard Bloom Filter'):
     hm = plt.imshow(fpr_results, cmap="Blues", interpolation="nearest");
     plt.colorbar(hm);
 
-#run("Standard Bloom Filter");
-#run("Counting Bloom Filter");
-#run("Scalable Bloom Filter");
+
 run("Parallel Partitioned Bloom Filter");
